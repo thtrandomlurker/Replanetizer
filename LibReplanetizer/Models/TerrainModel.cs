@@ -43,7 +43,7 @@ namespace LibReplanetizer.Models
             // Oh yes, we are hacking
             int faceStart = ReadInt(ReadBlock(fs, texturePointer + 4, 4), 0);
 
-            textureConfig = GetTextureConfigs(fs, texturePointer, textureCount, 0x10, true);
+            mappedTextureConfigs = GetTextureConfigs(fs, texturePointer, textureCount, 0x10, true);
             _faceCount = GetFaceCount();
 
             vertexBuffer = GetVertices(fs, head.vertexPointers[slotNum] + vertexIndex * 0x1C, head.uvPointers[slotNum] + vertexIndex * 0x08, vertexCount, 0x1C, 0x08);

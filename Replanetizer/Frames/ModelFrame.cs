@@ -569,9 +569,9 @@ namespace Replanetizer.Frames
 
             modelTextureList.Clear();
 
-            for (int i = 0; i < selectedModel.textureConfig.Count; i++)
+            for (int i = 0; i < selectedModel.mappedTextureConfigs.Count; i++)
             {
-                int textureId = selectedModel.textureConfig[i].id;
+                int textureId = selectedModel.mappedTextureConfigs[i].id;
                 if (textureId < 0 || textureId >= selectedTextureSet.Count) continue;
 
                 modelTextureList.Add(selectedTextureSet[textureId]);
@@ -795,13 +795,13 @@ namespace Replanetizer.Frames
             if (selectedModel == null) return;
             if (selectedTextureSet == null) return;
 
-            List<TextureConfig>? textureConfig = selectedModel.textureConfig;
+            List<TextureConfig>? textureConfig = selectedModel.mappedTextureConfigs;
             if (textureConfig == null) return;
 
             String folder = CrossFileDialog.OpenFolder();
             if (folder.Length == 0) return;
 
-            foreach (var config in selectedModel.textureConfig)
+            foreach (var config in selectedModel.mappedTextureConfigs)
             {
                 var textureId = config.id;
                 if (textureId < 0 || textureId >= selectedTextureSet.Count) continue;

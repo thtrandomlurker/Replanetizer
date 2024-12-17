@@ -146,7 +146,7 @@ namespace Replanetizer.Renderer
                 {
                     if (mipWidth > 0 && mipHeight > 0)
                     {
-                        int size = ((mipWidth + 3) / 4) * ((mipHeight + 3) / 4) * 16;
+                        int size = ((mipWidth + 3) / 4) * ((mipHeight + 3) / 4) * (t.textureFormat == TextureFormat.BC1 ? 8 : 16);
                         if (offset + size > t.data.Length)
                         {
                             LOGGER.Debug($"Texture {t.id} claims to have {t.mipMapCount} mipmaps but only has {mipLevel}!");
@@ -154,7 +154,20 @@ namespace Replanetizer.Renderer
                         }
                         byte[] texPart = new byte[size];
                         Array.Copy(t.data, offset, texPart, 0, size);
-                        GL.CompressedTexImage2D(TextureTarget.Texture2D, mipLevel, InternalFormat.CompressedRgbaS3tcDxt5Ext, mipWidth, mipHeight, 0, size, texPart);
+                        switch (t.textureFormat)
+                        {
+                            case TextureFormat.BC1:
+                                GL.CompressedTexImage2D(TextureTarget.Texture2D, mipLevel, InternalFormat.CompressedRgbaS3tcDxt1Ext, mipWidth, mipHeight, 0, size, texPart);
+                                break;
+                            case TextureFormat.BC2:
+                                GL.CompressedTexImage2D(TextureTarget.Texture2D, mipLevel, InternalFormat.CompressedRgbaS3tcDxt3Ext, mipWidth, mipHeight, 0, size, texPart);
+                                break;
+                            case TextureFormat.BC3:
+                                GL.CompressedTexImage2D(TextureTarget.Texture2D, mipLevel, InternalFormat.CompressedRgbaS3tcDxt5Ext, mipWidth, mipHeight, 0, size, texPart);
+                                break;
+                            default:
+                                throw new NotImplementedException($"Unknown texture format {t.textureFormat}");
+                        }
                         offset += size;
                         mipWidth /= 2;
                         mipHeight /= 2;
@@ -165,8 +178,21 @@ namespace Replanetizer.Renderer
             }
             else
             {
-                int size = ((t.width + 3) / 4) * ((t.height + 3) / 4) * 16;
-                GL.CompressedTexImage2D(TextureTarget.Texture2D, 0, InternalFormat.CompressedRgbaS3tcDxt5Ext, t.width, t.height, 0, size, t.data);
+                int size = ((t.width + 3) / 4) * ((t.height + 3) / 4) * (t.textureFormat == TextureFormat.BC1 ? 8 : 16);
+                switch (t.textureFormat)
+                {
+                    case TextureFormat.BC1:
+                        GL.CompressedTexImage2D(TextureTarget.Texture2D, mipLevel, InternalFormat.CompressedRgbaS3tcDxt1Ext, t.width, t.height, 0, size, t.data);
+                        break;
+                    case TextureFormat.BC2:
+                        GL.CompressedTexImage2D(TextureTarget.Texture2D, mipLevel, InternalFormat.CompressedRgbaS3tcDxt3Ext, t.width, t.height, 0, size, t.data);
+                        break;
+                    case TextureFormat.BC3:
+                        GL.CompressedTexImage2D(TextureTarget.Texture2D, mipLevel, InternalFormat.CompressedRgbaS3tcDxt5Ext, t.width, t.height, 0, size, t.data);
+                        break;
+                    default:
+                        throw new NotImplementedException($"Unknown texture format {t.textureFormat}");
+                }
                 GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
             }
 

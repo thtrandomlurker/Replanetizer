@@ -78,7 +78,7 @@ namespace LibReplanetizer.Serializers
                 tFrags[i].ToByteArray().CopyTo(tfragHeads, offset);
 
                 WriteInt(tfragHeads, offset + 0x10, fileOffset + headerSize + tfragHeads.Length + textureBytes.Count);
-                WriteInt(tfragHeads, offset + 0x14, mod.textureConfig.Count);
+                WriteInt(tfragHeads, offset + 0x14, mod.mappedTextureConfigs.Count);
 
                 byte[] modelVertBytes = mod.SerializeVerts();
                 if (((vertBytes[chunk].Count + modelVertBytes.Length) / 0x1c) > 0xffff)
@@ -91,7 +91,7 @@ namespace LibReplanetizer.Serializers
 
                 WriteUshort(tfragHeads, offset + 0x22, chunk);
 
-                foreach (var texConf in mod.textureConfig)
+                foreach (var texConf in mod.mappedTextureConfigs)
                 {
                     byte[] texBytes = new byte[0x10];
                     WriteInt(texBytes, 0x00, texConf.id);

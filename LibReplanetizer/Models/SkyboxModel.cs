@@ -59,7 +59,7 @@ namespace LibReplanetizer.Models
             int vertexCount = (int) ((faceOffset - vertOffset) / VERTELEMSIZE);
 
             textureConfigs = new List<List<TextureConfig>>();
-            textureConfig = new List<TextureConfig>();
+            mappedTextureConfigs = new List<TextureConfig>();
             byte[] faceGroupBlock = ReadBlock(fs, offset + headSize, faceGroupCount * 4);
             for (int i = 0; i < faceGroupCount; i++)
             {
@@ -67,7 +67,7 @@ namespace LibReplanetizer.Models
                 short texCount = ReadShort(ReadBlock(fs, faceGroupOffset + 0x02, 0x02), 0);
 
                 var texconfigs = new List<TextureConfig>(GetTextureConfigs(fs, faceGroupOffset + 0x10, texCount, 0x10));
-                textureConfig.AddRange(texconfigs);
+                mappedTextureConfigs.AddRange(texconfigs);
                 textureConfigs.Add(texconfigs);
             }
 

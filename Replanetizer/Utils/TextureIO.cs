@@ -55,7 +55,7 @@ namespace Replanetizer.Utils
             {
                 foreach (TieModel model in level.tieModels)
                 {
-                    foreach (TextureConfig conf in model.textureConfig)
+                    foreach (TextureConfig conf in model.mappedTextureConfigs)
                     {
                         if (conf.IgnoresTransparency())
                         {
@@ -66,7 +66,7 @@ namespace Replanetizer.Utils
 
                 foreach (MobyModel model in level.mobyModels)
                 {
-                    foreach (TextureConfig conf in model.textureConfig)
+                    foreach (TextureConfig conf in model.mappedTextureConfigs)
                     {
                         if (conf.IgnoresTransparency())
                         {

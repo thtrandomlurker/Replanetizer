@@ -337,7 +337,7 @@ namespace LibReplanetizer
 
                 //image
                 colladaStream.WriteLine("\t<library_images>");
-                foreach (TextureConfig config in model.textureConfig)
+                foreach (TextureConfig config in model.mappedTextureConfigs)
                 {
                     colladaStream.WriteLine("\t\t<image id=\"texture_" + config.id + "\">");
                     colladaStream.Write("\t\t\t<init_from>");
@@ -349,7 +349,7 @@ namespace LibReplanetizer
 
                 //effects
                 colladaStream.WriteLine("\t<library_effects>");
-                foreach (TextureConfig config in model.textureConfig)
+                foreach (TextureConfig config in model.mappedTextureConfigs)
                 {
                     colladaStream.WriteLine("\t\t<effect id=\"effect_" + config.id + "\">");
                     colladaStream.WriteLine("\t\t\t<profile_COMMON>");
@@ -382,7 +382,7 @@ namespace LibReplanetizer
 
                 //materials
                 colladaStream.WriteLine("\t<library_materials>");
-                foreach (TextureConfig config in model.textureConfig)
+                foreach (TextureConfig config in model.mappedTextureConfigs)
                 {
                     colladaStream.WriteLine("\t\t<material id=\"material_" + config.id + "\">");
                     colladaStream.WriteLine("\t\t\t<instance_effect url=\"#effect_" + config.id + "\"/>");
@@ -497,7 +497,7 @@ namespace LibReplanetizer
                 colladaStream.WriteLine("\t\t\t\t<vertices id=\"Model_vertices\">");
                 colladaStream.WriteLine("\t\t\t\t\t<input semantic=\"POSITION\" source=\"#Model_positions\"/>");
                 colladaStream.WriteLine("\t\t\t\t</vertices>");
-                foreach (TextureConfig config in model.textureConfig)
+                foreach (TextureConfig config in model.mappedTextureConfigs)
                 {
                     colladaStream.WriteLine("\t\t\t\t<triangles count=\"" + config.size / 3 + "\" material=\"material_symbol_" + config.id + "\">");
                     colladaStream.WriteLine("\t\t\t\t\t<input semantic=\"VERTEX\" source=\"#Model_vertices\" offset=\"0\"/>");
@@ -714,7 +714,7 @@ namespace LibReplanetizer
                 }
                 colladaStream.WriteLine("\t\t\t\t\t<bind_material>");
                 colladaStream.WriteLine("\t\t\t\t\t\t<technique_common>");
-                foreach (TextureConfig config in model.textureConfig)
+                foreach (TextureConfig config in model.mappedTextureConfigs)
                 {
                     colladaStream.WriteLine("\t\t\t\t\t\t\t<instance_material symbol=\"material_symbol_" + config.id + "\" target=\"#material_" + config.id + "\">");
                     colladaStream.WriteLine("\t\t\t\t\t\t\t\t<bind_vertex_input semantic=\"texcoord_" + config.id + "\" input_semantic=\"TEXCOORD\" input_set=\"0\"/>");

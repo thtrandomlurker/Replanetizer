@@ -564,7 +564,7 @@ namespace Replanetizer.Renderer
             shaderTable.animationShader.SetUniformMatrix4(UniformName.bones, mobyModel.boneCount, ref boneMatrices[0].Row0.X);
 
             //Bind textures one by one, applying it to the relevant vertices based on the index array
-            foreach (TextureConfig conf in mobyModel.textureConfig)
+            foreach (TextureConfig conf in mobyModel.mappedTextureConfigs)
             {
                 if (conf.id >= 0)
                 {

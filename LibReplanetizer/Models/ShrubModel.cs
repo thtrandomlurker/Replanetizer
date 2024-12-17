@@ -61,7 +61,7 @@ namespace LibReplanetizer.Models
 
             size = 1.0f;
 
-            textureConfig = GetTextureConfigs(fs, texturePointer, textureCount, SHRUBTEXELEMSIZE);
+            mappedTextureConfigs = GetTextureConfigs(fs, texturePointer, textureCount, SHRUBTEXELEMSIZE);
             int faceCount = GetFaceCount();
 
             //Get vertex buffer float[vertX, vertY, vertZ, normX, normY, normZ] and UV array float[U, V] * vertexCount
@@ -81,8 +81,8 @@ namespace LibReplanetizer.Models
             WriteFloat(outBytes, 0x0C, cullingRadius);
 
             int texturePointer = GetLength(offStart);
-            int hack = DistToFile80(texturePointer + textureConfig.Count * SHRUBTEXELEMSIZE);
-            int vertexPointer = GetLength(texturePointer + textureConfig.Count * SHRUBTEXELEMSIZE + hack); //+ 0x70
+            int hack = DistToFile80(texturePointer + mappedTextureConfigs.Count * SHRUBTEXELEMSIZE);
+            int vertexPointer = GetLength(texturePointer + mappedTextureConfigs.Count * SHRUBTEXELEMSIZE + hack); //+ 0x70
             int uvPointer = GetLength(vertexPointer + (vertexBuffer.Length / 8) * SHRUBVERTELEMSIZE);
             int indexPointer = GetLength(uvPointer + (vertexBuffer.Length / 8) * SHRUBUVELEMSIZE);
 
@@ -93,7 +93,7 @@ namespace LibReplanetizer.Models
 
             WriteUint(outBytes, 0x20, off20);
             WriteInt(outBytes, 0x24, vertexBuffer.Length / 8);
-            WriteShort(outBytes, 0x28, (short) textureConfig.Count);
+            WriteShort(outBytes, 0x28, (short) mappedTextureConfigs.Count);
             WriteShort(outBytes, 0x2A, off2A);
             WriteUint(outBytes, 0x2C, off2C);
 
@@ -108,8 +108,8 @@ namespace LibReplanetizer.Models
         public byte[] SerializeBody(int offStart)
         {
             int texturePointer = 0;
-            int hack = DistToFile80(GetLength(offStart) + texturePointer + textureConfig.Count * SHRUBTEXELEMSIZE);
-            int vertexPointer = GetLength(texturePointer + textureConfig.Count * SHRUBTEXELEMSIZE + hack); //+ 0x70
+            int hack = DistToFile80(GetLength(offStart) + texturePointer + mappedTextureConfigs.Count * SHRUBTEXELEMSIZE);
+            int vertexPointer = GetLength(texturePointer + mappedTextureConfigs.Count * SHRUBTEXELEMSIZE + hack); //+ 0x70
             int uvPointer = GetLength(vertexPointer + (vertexBuffer.Length / 8) * SHRUBVERTELEMSIZE);
             int indexPointer = GetLength(uvPointer + (vertexBuffer.Length / 8) * SHRUBUVELEMSIZE);
             int length = GetLength(indexPointer + indexBuffer.Length * 2);
@@ -119,12 +119,12 @@ namespace LibReplanetizer.Models
             GetFaceBytes().CopyTo(outBytes, indexPointer);
             SerializeUVs().CopyTo(outBytes, uvPointer);
 
-            for (int i = 0; i < textureConfig.Count; i++)
+            for (int i = 0; i < mappedTextureConfigs.Count; i++)
             {
-                WriteInt(outBytes, texturePointer + i * 0x10 + 0x00, textureConfig[i].id);
-                WriteInt(outBytes, texturePointer + i * 0x10 + 0x04, textureConfig[i].start);
-                WriteInt(outBytes, texturePointer + i * 0x10 + 0x08, textureConfig[i].size);
-                WriteInt(outBytes, texturePointer + i * 0x10 + 0x0C, textureConfig[i].mode);
+                WriteInt(outBytes, texturePointer + i * 0x10 + 0x00, mappedTextureConfigs[i].id);
+                WriteInt(outBytes, texturePointer + i * 0x10 + 0x04, mappedTextureConfigs[i].start);
+                WriteInt(outBytes, texturePointer + i * 0x10 + 0x08, mappedTextureConfigs[i].size);
+                WriteInt(outBytes, texturePointer + i * 0x10 + 0x0C, mappedTextureConfigs[i].mode);
             }
 
             return outBytes;

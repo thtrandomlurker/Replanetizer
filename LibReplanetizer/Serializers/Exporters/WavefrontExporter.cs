@@ -157,7 +157,7 @@ namespace LibReplanetizer
         {
             if (mtlfs == null || model == null) return;
 
-            foreach (TextureConfig conf in model.textureConfig)
+            foreach (TextureConfig conf in model.mappedTextureConfigs)
             {
                 int modelTextureID = conf.id;
                 if (usedMtls.Contains(modelTextureID))
@@ -280,10 +280,10 @@ namespace LibReplanetizer
             for (int faceIdx = 0; faceIdx < faceCount; faceIdx++)
             {
                 int vertIdx = faceIdx * 3;
-                if (model.textureConfig != null && textureNum < model.textureConfig.Count &&
-                    vertIdx >= model.textureConfig[textureNum].start)
+                if (model.mappedTextureConfigs != null && textureNum < model.mappedTextureConfigs.Count &&
+                    vertIdx >= model.mappedTextureConfigs[textureNum].start)
                 {
-                    string modelId = model.textureConfig[textureNum].id.ToString();
+                    string modelId = model.mappedTextureConfigs[textureNum].id.ToString();
                     objfs.WriteLine("usemtl mtl_" + modelId);
                     objfs.WriteLine("g Texture_" + modelId);
                     textureNum++;
@@ -334,7 +334,7 @@ namespace LibReplanetizer
             using (StreamWriter objfs = new StreamWriter(fileName))
             {
                 objfs.WriteLine("o Object_" + model.id.ToString("X4"));
-                if (model.textureConfig != null && modelSettings.exportMtlFile)
+                if (model.mappedTextureConfigs != null && modelSettings.exportMtlFile)
                     objfs.WriteLine("mtllib " + fileNameNoExtension + ".mtl");
 
                 Matrix4 scale = Matrix4.CreateScale(model.size);
@@ -616,14 +616,14 @@ namespace LibReplanetizer
                 int materialID = 0;
                 bool clampMaterial = true;
 
-                if ((model.textureConfig != null) && (textureNum < model.textureConfig.Count))
+                if ((model.mappedTextureConfigs != null) && (textureNum < model.mappedTextureConfigs.Count))
                 {
-                    if ((textureNum + 1 < model.textureConfig.Count) && (triIndex >= model.textureConfig[textureNum + 1].start))
+                    if ((textureNum + 1 < model.mappedTextureConfigs.Count) && (triIndex >= model.mappedTextureConfigs[textureNum + 1].start))
                     {
                         textureNum++;
                     }
 
-                    TextureConfig conf = model.textureConfig[textureNum];
+                    TextureConfig conf = model.mappedTextureConfigs[textureNum];
 
                     materialID = conf.id;
                     clampMaterial = (conf.wrapModeS == TextureConfig.WrapMode.ClampEdge && conf.wrapModeT == TextureConfig.WrapMode.ClampEdge) ? true : false;

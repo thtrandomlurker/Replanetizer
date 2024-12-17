@@ -414,7 +414,7 @@ namespace LibReplanetizer
             {
                 if (game != GameType.RaC1)
                 {
-                    foreach (TextureConfig conf in model.textureConfig)
+                    foreach (TextureConfig conf in model.mappedTextureConfigs)
                     {
                         conf.id += gadgetTextureOffset;
                     }
@@ -435,7 +435,7 @@ namespace LibReplanetizer
 
                 Model defaultRatchetModel = armorModels[0];
 
-                foreach (TextureConfig conf in defaultRatchetModel.textureConfig)
+                foreach (TextureConfig conf in defaultRatchetModel.mappedTextureConfigs)
                 {
                     conf.id += armorTextureOffset;
                 }

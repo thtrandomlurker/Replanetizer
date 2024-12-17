@@ -17,8 +17,9 @@ namespace LibReplanetizer.Models
     {
         private static readonly NLog.Logger LOGGER = NLog.LogManager.GetCurrentClassLogger();
 
-        const int VERTELEMENTSIZE = 0x28;
-        const int TEXTUREELEMENTSIZE = 0x10;
+        const int TEXTUREDVERTELEMENTSIZE = 0x28;
+        const int REFLECTIVEVERTELEMENTSIZE = 0x20;
+        const int SUBMESHELEMENTSIZE = 0x10;
         const int MESHHEADERSIZE = 0x20;
         const int HEADERSIZE = 0x48;
 
@@ -48,7 +49,7 @@ namespace LibReplanetizer.Models
         public uint color2 { get; set; }               // RGBA color
         public uint unk6 { get; set; }
 
-        public ushort vertexCount2 { get; set; }
+        public ushort litVertexCount { get; set; }
 
         [Category("Attributes"), DisplayName("Animations")]
         public List<Animation> animations { get; set; } = new List<Animation>();
@@ -63,14 +64,14 @@ namespace LibReplanetizer.Models
         [Category("Attributes"), DisplayName("Bone Datas")]
         public List<BoneData> boneDatas { get; set; } = new List<BoneData>();
 
-        [Category("Unknowns"), DisplayName("Other Buffer")]
-        public List<byte> otherBuffer { get; set; } = new List<byte>();
+        [Category("Unknowns"), DisplayName("Reflective Vertex Buffer")]
+        public float[] reflectiveVertexBuffer { get; set; } = new float[0];
 
-        [Category("Unknowns"), DisplayName("Other Texture Configurations")]
-        public List<TextureConfig> otherTextureConfigs { get; set; } = new List<TextureConfig>();
+        [Category("Unknowns"), DisplayName("Reflective Texture Configurations")]
+        public List<TextureConfig> reflectiveTextureConfigs { get; set; } = new List<TextureConfig>();
 
-        [Category("Unknowns"), DisplayName("Other Index Buffer")]
-        public List<ushort> otherIndexBuffer { get; set; } = new List<ushort>();
+        [Category("Unknowns"), DisplayName("Reflective Index Buffer")]
+        public ushort[] reflectiveIndexBuffer { get; set; } = new ushort[0];
         public Skeleton? skeleton = null;
         [Category("Attributes"), DisplayName("Is Model")]
         public bool isModel { get; set; } = true;
@@ -213,32 +214,32 @@ namespace LibReplanetizer.Models
             {
                 byte[] meshHeader = ReadBlock(fs, offset + meshPointer, 0x20);
 
-                int texCount = ReadInt(meshHeader, 0x00);
-                int otherCount = ReadInt(meshHeader, 0x04);
-                int texBlockPointer = offset + ReadInt(meshHeader, 0x08);
-                int otherBlockPointer = offset + ReadInt(meshHeader, 0x0C);
+                int texturedSubMeshCount = ReadInt(meshHeader, 0x00);
+                int reflectiveSubMeshCount = ReadInt(meshHeader, 0x04);
+                int texturedSubMeshPointer = offset + ReadInt(meshHeader, 0x08);
+                int reflectiveSubMeshPointer = offset + ReadInt(meshHeader, 0x0C);
                 int vertPointer = offset + ReadInt(meshHeader, 0x10);
                 int indexPointer = offset + ReadInt(meshHeader, 0x14);
-                ushort vertexCount = ReadUshort(meshHeader, 0x18);
-                ushort otherVertCount = ReadUshort(meshHeader, 0x1a);
+                ushort texturedVertexCount = ReadUshort(meshHeader, 0x18);
+                ushort reflectiveVertexCount = ReadUshort(meshHeader, 0x18);
 
-                int otherPointer = vertPointer + vertexCount * 0x28;
+                int reflectiveVertPointer = vertPointer + texturedVertexCount * 0x28;
 
-                vertexCount2 = ReadUshort(meshHeader, 0x1C);     //These vertices are not affected by color2
+                litVertexCount = ReadUshort(meshHeader, 0x1C);     //These vertices are not affected by color2
 
                 int faceCount = 0;
 
                 //Texture configuration
-                if (texBlockPointer > 0)
+                if (texturedSubMeshPointer > 0)
                 {
-                    textureConfig = GetTextureConfigs(fs, texBlockPointer, texCount, TEXTUREELEMENTSIZE);
+                    mappedTextureConfigs = GetTextureConfigs(fs, texturedSubMeshPointer, texturedSubMeshCount, SUBMESHELEMENTSIZE);
                     faceCount = GetFaceCount();
                 }
 
-                if (vertPointer > 0 && vertexCount > 0)
+                if (vertPointer > 0 && texturedVertexCount > 0)
                 {
                     //Get vertex buffer float[vertX, vertY, vertZ, normX, normY, normZ, U, V, reserved, reserved]
-                    vertexBuffer = GetVertices(fs, vertPointer, vertexCount, VERTELEMENTSIZE);
+                    vertexBuffer = GetVertices(fs, vertPointer, texturedVertexCount, TEXTUREDVERTELEMENTSIZE);
                 }
 
                 if (indexPointer > 0 && faceCount > 0)
@@ -246,16 +247,16 @@ namespace LibReplanetizer.Models
                     //Index buffer
                     indexBuffer = GetIndices(fs, indexPointer, faceCount);
                 }
-                if (otherPointer > 0)
+                if (reflectiveSubMeshPointer > 0)
                 {
-                    otherBuffer.AddRange(ReadBlockNopad(fs, otherPointer, otherVertCount * 0x20));
-                    otherTextureConfigs = GetTextureConfigs(fs, otherBlockPointer, otherCount, 0x10);
-                    int otherfaceCount = 0;
-                    foreach (TextureConfig tex in otherTextureConfigs)
+                    reflectiveVertexBuffer = GetReflectiveVertices(fs, reflectiveVertPointer, reflectiveVertexCount, REFLECTIVEVERTELEMENTSIZE);
+                    reflectiveTextureConfigs = GetTextureConfigs(fs, reflectiveSubMeshPointer, reflectiveSubMeshCount, SUBMESHELEMENTSIZE);
+                    int reflectiveFaceCount = 0;
+                    foreach (TextureConfig tex in reflectiveTextureConfigs)
                     {
-                        otherfaceCount += tex.size;
+                        reflectiveFaceCount += tex.size;
                     }
-                    otherIndexBuffer.AddRange(GetIndices(fs, indexPointer + faceCount * sizeof(ushort), otherfaceCount));
+                    reflectiveIndexBuffer = GetIndices(fs, indexPointer + faceCount * sizeof(ushort), reflectiveFaceCount);
                 }
             }
 
@@ -281,32 +282,32 @@ namespace LibReplanetizer.Models
 
             byte[] meshHeader = ReadBlock(fileStream, modelPointer, 0x20);
 
-            int texCount = ReadInt(meshHeader, 0x00);
-            int otherCount = ReadInt(meshHeader, 0x04);
-            int texBlockPointer = ReadInt(meshHeader, 0x08);
-            int otherBlockPointer = ReadInt(meshHeader, 0x0C);
+            int texturedSubMeshCount = ReadInt(meshHeader, 0x00);
+            int reflectiveSubMeshCount = ReadInt(meshHeader, 0x04);
+            int texturedSubMeshPointer = ReadInt(meshHeader, 0x08);
+            int reflectiveSubMeshPointer = ReadInt(meshHeader, 0x0C);
             int vertPointer = ReadInt(meshHeader, 0x10);
             int indexPointer = ReadInt(meshHeader, 0x14);
-            ushort vertexCount = ReadUshort(meshHeader, 0x18);
-            ushort otherVertCount = ReadUshort(meshHeader, 0x1a);
+            ushort texturedVertexCount = ReadUshort(meshHeader, 0x18);
+            ushort reflectiveVertexCount = ReadUshort(meshHeader, 0x18);
 
-            int otherPointer = vertPointer + vertexCount * 0x28;
+            int reflectiveVertPointer = vertPointer + texturedVertexCount * 0x28;
 
-            model.vertexCount2 = ReadUshort(meshHeader, 0x1C);     //These vertices are not affected by color2
+            model.litVertexCount = ReadUshort(meshHeader, 0x1C);     //These vertices are not affected by color2
 
             int faceCount = 0;
 
             //Texture configuration
-            if (texBlockPointer > 0)
+            if (texturedSubMeshPointer > 0)
             {
-                model.textureConfig = GetTextureConfigs(fileStream, texBlockPointer, texCount, TEXTUREELEMENTSIZE);
+                model.mappedTextureConfigs = GetTextureConfigs(fileStream, texturedSubMeshPointer, texturedSubMeshCount, SUBMESHELEMENTSIZE);
                 faceCount = model.GetFaceCount();
             }
 
-            if (vertPointer > 0 && vertexCount > 0)
+            if (vertPointer > 0 && texturedVertexCount > 0)
             {
                 //Get vertex buffer float[vertX, vertY, vertZ, normX, normY, normZ, U, V, reserved, reserved]
-                model.vertexBuffer = model.GetVertices(fileStream, vertPointer, vertexCount, VERTELEMENTSIZE);
+                model.vertexBuffer = model.GetVertices(fileStream, vertPointer, texturedVertexCount, TEXTUREDVERTELEMENTSIZE);
             }
 
             if (indexPointer > 0 && faceCount > 0)
@@ -314,17 +315,16 @@ namespace LibReplanetizer.Models
                 //Index buffer
                 model.indexBuffer = GetIndices(fileStream, indexPointer, faceCount);
             }
-
-            if (otherPointer > 0)
+            if (reflectiveSubMeshPointer > 0)
             {
-                model.otherBuffer.AddRange(ReadBlockNopad(fileStream, otherPointer, otherVertCount * 0x20));
-                model.otherTextureConfigs = GetTextureConfigs(fileStream, otherBlockPointer, otherCount, 0x10);
+                model.reflectiveVertexBuffer = model.GetReflectiveVertices(fileStream, reflectiveVertPointer, reflectiveVertexCount, REFLECTIVEVERTELEMENTSIZE);
+                model.reflectiveTextureConfigs = GetTextureConfigs(fileStream, reflectiveSubMeshPointer, reflectiveSubMeshCount, SUBMESHELEMENTSIZE);
                 int otherfaceCount = 0;
-                foreach (TextureConfig tex in model.otherTextureConfigs)
+                foreach (TextureConfig tex in model.reflectiveTextureConfigs)
                 {
                     otherfaceCount += tex.size;
                 }
-                model.otherIndexBuffer.AddRange(GetIndices(fileStream, indexPointer + faceCount * sizeof(ushort), otherfaceCount));
+                model.reflectiveIndexBuffer = GetIndices(fileStream, indexPointer + faceCount * sizeof(ushort), otherfaceCount);
             }
 
             return model;
@@ -346,57 +346,83 @@ namespace LibReplanetizer.Models
 
             int objectPointer = ReadInt(meshHeader, 0x00);
 
-            int texCount = ReadInt(meshHeader, objectPointer + 0x00);
-            int otherCount = ReadInt(meshHeader, objectPointer + 0x04);
-            int texBlockPointer = ReadInt(meshHeader, objectPointer + 0x08);
-            int otherBlockPointer = ReadInt(meshHeader, objectPointer + 0x0C);
+            int texturedSubMeshCount = ReadInt(meshHeader, objectPointer + 0x00);
+            int reflectiveSubMeshCount = ReadInt(meshHeader, objectPointer + 0x04);
+            int texturedSubMeshPointer = ReadInt(meshHeader, objectPointer + 0x08);
+            int reflectiveSubMeshPointer = ReadInt(meshHeader, objectPointer + 0x0C);
             int vertPointer = ReadInt(meshHeader, objectPointer + 0x10);
             int indexPointer = ReadInt(meshHeader, objectPointer + 0x14);
-            ushort vertexCount = ReadUshort(meshHeader, objectPointer + 0x18);
-            ushort otherVertCount = ReadUshort(meshHeader, objectPointer + 0x1a);
-            model.size = ReadFloat(meshHeader, 0x24);
+            ushort texturedVertexCount = ReadUshort(meshHeader, objectPointer + 0x18);
+            ushort reflectiveVertexCount = ReadUshort(meshHeader, objectPointer + 0x18);
 
-            int otherPointer = vertPointer + vertexCount * 0x28;
+            int reflectiveVertPointer = vertPointer + texturedVertexCount * 0x28;
 
-            model.vertexCount2 = ReadUshort(meshHeader, objectPointer + 0x1C);     //These vertices are not affected by color2
+            model.litVertexCount = ReadUshort(meshHeader, 0x1C);     //These vertices are not affected by color2
 
             int faceCount = 0;
 
             //Texture configuration
-            if (texBlockPointer > 0)
+            if (texturedSubMeshPointer > 0)
             {
-                model.textureConfig = GetTextureConfigs(fileStream, modelPointer + texBlockPointer, texCount, TEXTUREELEMENTSIZE);
+                model.mappedTextureConfigs = GetTextureConfigs(fileStream, texturedSubMeshPointer, texturedSubMeshCount, SUBMESHELEMENTSIZE);
                 faceCount = model.GetFaceCount();
             }
 
-            if (vertPointer > 0 && vertexCount > 0)
+            if (vertPointer > 0 && texturedVertexCount > 0)
             {
                 //Get vertex buffer float[vertX, vertY, vertZ, normX, normY, normZ, U, V, reserved, reserved]
-                model.vertexBuffer = model.GetVertices(fileStream, modelPointer + vertPointer, vertexCount, VERTELEMENTSIZE);
+                model.vertexBuffer = model.GetVertices(fileStream, vertPointer, texturedVertexCount, TEXTUREDVERTELEMENTSIZE);
             }
 
             if (indexPointer > 0 && faceCount > 0)
             {
                 //Index buffer
-                model.indexBuffer = GetIndices(fileStream, modelPointer + indexPointer, faceCount);
+                model.indexBuffer = GetIndices(fileStream, indexPointer, faceCount);
             }
-
-            if (otherPointer > 0)
+            if (reflectiveSubMeshPointer > 0)
             {
-                model.otherBuffer.AddRange(ReadBlockNopad(fileStream, modelPointer + otherPointer, otherVertCount * 0x20));
-                model.otherTextureConfigs = GetTextureConfigs(fileStream, modelPointer + otherBlockPointer, otherCount, 0x10);
+                model.reflectiveVertexBuffer = model.GetReflectiveVertices(fileStream, reflectiveVertPointer, reflectiveVertexCount, REFLECTIVEVERTELEMENTSIZE);
+                model.reflectiveTextureConfigs = GetTextureConfigs(fileStream, reflectiveSubMeshPointer, reflectiveSubMeshCount, SUBMESHELEMENTSIZE);
                 int otherfaceCount = 0;
-                foreach (TextureConfig tex in model.otherTextureConfigs)
+                foreach (TextureConfig tex in model.reflectiveTextureConfigs)
                 {
                     otherfaceCount += tex.size;
                 }
-                model.otherIndexBuffer.AddRange(GetIndices(fileStream, modelPointer + indexPointer + faceCount * sizeof(ushort), otherfaceCount));
+                model.reflectiveIndexBuffer = GetIndices(fileStream, indexPointer + faceCount * sizeof(ushort), otherfaceCount);
             }
 
             return model;
         }
 
+        public byte[] SerializeReflectiveVertices()
+        {
+            int elemSize = 0x20;
+            byte[] outBytes = new byte[(vertexBuffer.Length / 8) * elemSize];
 
+            for (int i = 0; i < vertexBuffer.Length / 8; i++)
+            {
+                WriteFloat(outBytes, (i * elemSize) + 0x00, vertexBuffer[(i * 6) + 0]);
+                WriteFloat(outBytes, (i * elemSize) + 0x04, vertexBuffer[(i * 6) + 1]);
+                WriteFloat(outBytes, (i * elemSize) + 0x08, vertexBuffer[(i * 6) + 2]);
+                WriteFloat(outBytes, (i * elemSize) + 0x0C, vertexBuffer[(i * 6) + 3]);
+                WriteFloat(outBytes, (i * elemSize) + 0x10, vertexBuffer[(i * 6) + 4]);
+                WriteFloat(outBytes, (i * elemSize) + 0x14, vertexBuffer[(i * 6) + 5]);
+                WriteUint(outBytes, (i * elemSize) + 0x18, weights[i]);
+                WriteUint(outBytes, (i * elemSize) + 0x1C, ids[i]);
+            }
+
+            return outBytes;
+        }
+
+        public byte[] GetReflectiveFaceBytes(ushort offset = 0)
+        {
+            byte[] indexBytes = new byte[reflectiveIndexBuffer.Length * sizeof(ushort)];
+            for (int i = 0; i < reflectiveIndexBuffer.Length; i++)
+            {
+                WriteUshort(indexBytes, i * sizeof(ushort), (ushort) (reflectiveIndexBuffer[i] + offset));
+            }
+            return indexBytes;
+        }
 
 
         public byte[] Serialize(int offset)
@@ -421,11 +447,8 @@ namespace LibReplanetizer.Models
             byte[] faceBytes = GetFaceBytes();
 
 
-            byte[] otherFaceBytes = new byte[otherIndexBuffer.Count * sizeof(ushort)];
-            for (int i = 0; i < otherIndexBuffer.Count; i++)
-            {
-                WriteUshort(otherFaceBytes, i * sizeof(ushort), otherIndexBuffer[i]);
-            }
+            byte[] reflectiveVertexBytes = SerializeReflectiveVertices();
+            byte[] reflectiveFaceBytes = GetReflectiveFaceBytes();
 
             //sounds
             byte[] soundBytes = new byte[modelSounds.Count * 0x20];
@@ -455,16 +478,16 @@ namespace LibReplanetizer.Models
             if (id > 2) hack = 0x20;
             int meshDataOffset = GetLength(HEADERSIZE + animations.Count * 4 + stupidOffset + hack, alignment);
             int textureConfigOffset = GetLength(meshDataOffset + 0x20, alignment);
-            int otherTextureConfigOffset = GetLength(textureConfigOffset + textureConfig.Count * 0x10, alignment);
+            int otherTextureConfigOffset = GetLength(textureConfigOffset + mappedTextureConfigs.Count * 0x10, alignment);
 
             int file80 = 0;
             if (vertexBuffer.Length != 0)
-                file80 = DistToFile80(offset + otherTextureConfigOffset + otherTextureConfigs.Count * 0x10);
-            int vertOffset = GetLength(otherTextureConfigOffset + otherTextureConfigs.Count * 0x10 + file80, alignment);
-            int otherOffset = vertOffset + vertexBytes.Length;
-            int faceOffset = GetLength(otherOffset + otherBuffer.Count, alignment);
-            int otherFaceOffset = faceOffset + faceBytes.Length;
-            int type10Offset = GetLength(otherFaceOffset + otherFaceBytes.Length, alignment);
+                file80 = DistToFile80(offset + otherTextureConfigOffset + reflectiveTextureConfigs.Count * 0x10);
+            int vertOffset = GetLength(otherTextureConfigOffset + reflectiveTextureConfigs.Count * 0x10 + file80, alignment);
+            int reflectiveVertOffset = vertOffset + vertexBytes.Length;
+            int faceOffset = GetLength(reflectiveVertOffset + reflectiveVertexBytes.Length, alignment);
+            int reflectiveFaceOffset = faceOffset + faceBytes.Length;
+            int type10Offset = GetLength(reflectiveFaceOffset + reflectiveFaceBytes.Length, alignment);
             int soundOffset = GetLength(type10Offset + type10Block.Length, alignment);
             int attachmentOffset = GetLength(soundOffset + soundBytes.Length, alignment);
 
@@ -567,10 +590,10 @@ namespace LibReplanetizer.Models
                 WriteInt(outbytes, HEADERSIZE + i * 0x04, animOffsets[i]);
             }
 
-            otherBuffer.CopyTo(outbytes, otherOffset);
             vertexBytes.CopyTo(outbytes, vertOffset);
+            reflectiveVertexBytes.CopyTo(outbytes, reflectiveVertOffset);
             faceBytes.CopyTo(outbytes, faceOffset);
-            otherFaceBytes.CopyTo(outbytes, otherFaceOffset);
+            reflectiveFaceBytes.CopyTo(outbytes, reflectiveFaceOffset);
 
             if (type10Block != null)
             {
@@ -585,12 +608,12 @@ namespace LibReplanetizer.Models
 
 
             // Mesh header
-            WriteInt(outbytes, meshDataOffset + 0x00, textureConfig.Count);
-            WriteInt(outbytes, meshDataOffset + 0x04, otherTextureConfigs.Count);
+            WriteInt(outbytes, meshDataOffset + 0x00, mappedTextureConfigs.Count);
+            WriteInt(outbytes, meshDataOffset + 0x04, reflectiveTextureConfigs.Count);
             //Othercount
-            if (textureConfig.Count != 0)
+            if (mappedTextureConfigs.Count != 0)
                 WriteInt(outbytes, meshDataOffset + 0x08, textureConfigOffset);
-            if (otherTextureConfigs.Count != 0)
+            if (reflectiveTextureConfigs.Count != 0)
                 WriteInt(outbytes, meshDataOffset + 0x0c, otherTextureConfigOffset);
             //otheroffset
             if (vertexBuffer.Length != 0)
@@ -598,25 +621,25 @@ namespace LibReplanetizer.Models
 
             if (faceBytes.Length != 0)
                 WriteInt(outbytes, meshDataOffset + 0x14, faceOffset);
-            WriteShort(outbytes, meshDataOffset + 0x18, (short) (vertexBytes.Length / VERTELEMENTSIZE));
-            WriteShort(outbytes, meshDataOffset + 0x1a, (short) (otherBuffer.Count / 0x20));
-            WriteShort(outbytes, meshDataOffset + 0x1C, (short) (vertexCount2));
+            WriteShort(outbytes, meshDataOffset + 0x18, (short) (vertexBytes.Length / TEXTUREDVERTELEMENTSIZE));
+            WriteShort(outbytes, meshDataOffset + 0x1a, (short) (reflectiveVertexBytes.Length / REFLECTIVEVERTELEMENTSIZE));
+            WriteShort(outbytes, meshDataOffset + 0x1C, (short) (litVertexCount));
 
 
-            for (int i = 0; i < textureConfig.Count; i++)
+            for (int i = 0; i < mappedTextureConfigs.Count; i++)
             {
-                WriteInt(outbytes, textureConfigOffset + i * 0x10 + 0x00, textureConfig[i].id);
-                WriteInt(outbytes, textureConfigOffset + i * 0x10 + 0x04, textureConfig[i].start);
-                WriteInt(outbytes, textureConfigOffset + i * 0x10 + 0x08, textureConfig[i].size);
-                WriteInt(outbytes, textureConfigOffset + i * 0x10 + 0x0C, textureConfig[i].mode);
+                WriteInt(outbytes, textureConfigOffset + i * 0x10 + 0x00, mappedTextureConfigs[i].id);
+                WriteInt(outbytes, textureConfigOffset + i * 0x10 + 0x04, mappedTextureConfigs[i].start);
+                WriteInt(outbytes, textureConfigOffset + i * 0x10 + 0x08, mappedTextureConfigs[i].size);
+                WriteInt(outbytes, textureConfigOffset + i * 0x10 + 0x0C, mappedTextureConfigs[i].mode);
             }
 
-            for (int i = 0; i < otherTextureConfigs.Count; i++)
+            for (int i = 0; i < reflectiveTextureConfigs.Count; i++)
             {
-                WriteInt(outbytes, otherTextureConfigOffset + i * 0x10 + 0x00, otherTextureConfigs[i].id);
-                WriteInt(outbytes, otherTextureConfigOffset + i * 0x10 + 0x04, otherTextureConfigs[i].start);
-                WriteInt(outbytes, otherTextureConfigOffset + i * 0x10 + 0x08, otherTextureConfigs[i].size);
-                WriteInt(outbytes, otherTextureConfigOffset + i * 0x10 + 0x0C, otherTextureConfigs[i].mode);
+                WriteInt(outbytes, otherTextureConfigOffset + i * 0x10 + 0x00, reflectiveTextureConfigs[i].id);
+                WriteInt(outbytes, otherTextureConfigOffset + i * 0x10 + 0x04, reflectiveTextureConfigs[i].start);
+                WriteInt(outbytes, otherTextureConfigOffset + i * 0x10 + 0x08, reflectiveTextureConfigs[i].size);
+                WriteInt(outbytes, otherTextureConfigOffset + i * 0x10 + 0x0C, reflectiveTextureConfigs[i].mode);
             }
 
             return outbytes;

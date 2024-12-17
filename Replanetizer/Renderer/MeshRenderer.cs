@@ -646,7 +646,7 @@ namespace Replanetizer.Renderer
             shaderTable.meshShader.SetUniform1(UniformName.objectBlendDistance, blendDistance);
 
             //Bind textures one by one, applying it to the relevant vertices based on the index array
-            foreach (TextureConfig conf in modelRender.textureConfig)
+            foreach (TextureConfig conf in modelRender.mappedTextureConfigs)
             {
                 if (conf.id >= 0)
                 {

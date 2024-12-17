@@ -978,9 +978,9 @@ namespace LibReplanetizer
 
                 if (settings.embedTextures && textures != null)
                 {
-                    for (int i = 0; i < model.textureConfig.Count; i++)
+                    for (int i = 0; i < model.mappedTextureConfigs.Count; i++)
                     {
-                        TextureConfig conf = model.textureConfig[i];
+                        TextureConfig conf = model.mappedTextureConfigs[i];
                         if (!texIDToImageBuffer.ContainsKey(conf.id))
                         {
                             Texture? tex = textures.Find(t => t.id == conf.id);
@@ -1092,9 +1092,9 @@ namespace LibReplanetizer
                     listBufferViews.Add(new GLTFBufferViewEntry("ScaleBufferView", 4, animScaleSize * sizeof(float), animScaleBaseOffset * sizeof(float)));
                 }
                 int indexBufferViewBaseID = listBufferViews.Count;
-                for (int i = 0; i < model.textureConfig.Count; i++)
+                for (int i = 0; i < model.mappedTextureConfigs.Count; i++)
                 {
-                    TextureConfig conf = model.textureConfig[i];
+                    TextureConfig conf = model.mappedTextureConfigs[i];
                     int byteOffset = sizeof(ushort) * conf.start;
                     int byteLength = sizeof(ushort) * conf.size;
 
@@ -1144,9 +1144,9 @@ namespace LibReplanetizer
 
                 int indexAccessorBaseID = listAccessors.Count;
 
-                for (int i = 0; i < model.textureConfig.Count; i++)
+                for (int i = 0; i < model.mappedTextureConfigs.Count; i++)
                 {
-                    listAccessors.Add(new GLTFAccessorEntry("IndexAccessor" + i, indexBufferViewBaseID + i, GLTFAccessorEntry.UNSIGNED_SHORT, false, model.textureConfig[i].size, 0, GLTFAccessorEntry.SCALAR));
+                    listAccessors.Add(new GLTFAccessorEntry("IndexAccessor" + i, indexBufferViewBaseID + i, GLTFAccessorEntry.UNSIGNED_SHORT, false, model.mappedTextureConfigs[i].size, 0, GLTFAccessorEntry.SCALAR));
                 }
 
                 if (exportAnimations)
@@ -1227,9 +1227,9 @@ namespace LibReplanetizer
                 List<GLTFImageEntry> listImages = new List<GLTFImageEntry>();
                 if (settings.embedTextures && textures != null)
                 {
-                    for (int i = 0; i < model.textureConfig.Count; i++)
+                    for (int i = 0; i < model.mappedTextureConfigs.Count; i++)
                     {
-                        TextureConfig conf = model.textureConfig[i];
+                        TextureConfig conf = model.mappedTextureConfigs[i];
                         if (!texIDToImageOffset.ContainsKey(conf.id) && textureDataBufferViewIDs.ContainsKey(conf.id))
                         {
                             texIDToImageOffset.Add(conf.id, listImages.Count);
@@ -1239,9 +1239,9 @@ namespace LibReplanetizer
                 }
                 else
                 {
-                    for (int i = 0; i < model.textureConfig.Count; i++)
+                    for (int i = 0; i < model.mappedTextureConfigs.Count; i++)
                     {
-                        TextureConfig conf = model.textureConfig[i];
+                        TextureConfig conf = model.mappedTextureConfigs[i];
                         if (!texIDToImageOffset.ContainsKey(conf.id))
                         {
                             texIDToImageOffset.Add(conf.id, listImages.Count);
@@ -1257,9 +1257,9 @@ namespace LibReplanetizer
                 ////
 
                 List<GLTFSamplerEntry> listSamplers = new List<GLTFSamplerEntry>();
-                for (int i = 0; i < model.textureConfig.Count; i++)
+                for (int i = 0; i < model.mappedTextureConfigs.Count; i++)
                 {
-                    listSamplers.Add(new GLTFSamplerEntry(model.textureConfig[i]));
+                    listSamplers.Add(new GLTFSamplerEntry(model.mappedTextureConfigs[i]));
                 }
                 this.samplers = listSamplers.ToArray();
 
@@ -1268,9 +1268,9 @@ namespace LibReplanetizer
                 ////
 
                 List<GLTFTextureEntry> listTextures = new List<GLTFTextureEntry>();
-                for (int i = 0; i < model.textureConfig.Count; i++)
+                for (int i = 0; i < model.mappedTextureConfigs.Count; i++)
                 {
-                    TextureConfig conf = model.textureConfig[i];
+                    TextureConfig conf = model.mappedTextureConfigs[i];
                     listTextures.Add(new GLTFTextureEntry(i, texIDToImageOffset[conf.id]));
                 }
                 this.textures = listTextures.ToArray();
@@ -1280,9 +1280,9 @@ namespace LibReplanetizer
                 ////
 
                 List<GLTFMaterialEntry> listMaterials = new List<GLTFMaterialEntry>();
-                for (int i = 0; i < model.textureConfig.Count; i++)
+                for (int i = 0; i < model.mappedTextureConfigs.Count; i++)
                 {
-                    listMaterials.Add(new GLTFMaterialEntry(model.textureConfig[i], i));
+                    listMaterials.Add(new GLTFMaterialEntry(model.mappedTextureConfigs[i], i));
                 }
                 this.materials = listMaterials.ToArray();
 
@@ -1306,7 +1306,7 @@ namespace LibReplanetizer
                 ////
 
                 List<GLTFMeshEntry.GLTFMeshPrimitivesEntry> listMeshPrimitives = new List<GLTFMeshEntry.GLTFMeshPrimitivesEntry>();
-                for (int i = 0; i < model.textureConfig.Count; i++)
+                for (int i = 0; i < model.mappedTextureConfigs.Count; i++)
                 {
                     listMeshPrimitives.Add(new GLTFMeshEntry.GLTFMeshPrimitivesEntry(vertexAttribs, indexAccessorBaseID + i, i));
                 }

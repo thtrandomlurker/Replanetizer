@@ -23,6 +23,7 @@ namespace LibReplanetizer.Models
         public short id { get; set; }
         [Category("Attributes"), DisplayName("Size")]
         public float size { get; set; } = 1.0f;
+
         public float[] vertexBuffer = { };
         public ushort[] indexBuffer = { };
 
@@ -58,7 +59,7 @@ namespace LibReplanetizer.Models
         public byte[] rgbas { get; set; } = new byte[0];
 
         [Category("Attributes"), DisplayName("Texture Configurations")]
-        public List<TextureConfig> textureConfig { get; set; } = new List<TextureConfig>();
+        public List<TextureConfig> mappedTextureConfigs { get; set; } = new List<TextureConfig>();
 
         public ushort[] GetIndices()
         {
@@ -78,9 +79,9 @@ namespace LibReplanetizer.Models
         protected int GetFaceCount()
         {
             int faceCount = 0;
-            if (textureConfig != null)
+            if (mappedTextureConfigs != null)
             {
-                foreach (TextureConfig tex in textureConfig)
+                foreach (TextureConfig tex in mappedTextureConfigs)
                 {
                     faceCount += tex.size;
                 }
@@ -159,6 +160,33 @@ namespace LibReplanetizer.Models
             return vertexBuffer;
         }
 
+        //Get vertices with UV's baked in
+        public float[] GetReflectiveVertices(FileStream fs, int vertexPointer, int vertexCount, int elemSize)
+        {
+            float[] vertexBuffer = new float[vertexCount * 8];
+            weights = new uint[vertexCount];
+            ids = new uint[vertexCount];
+            //List<float> vertexBuffer = new List<float>();
+            byte[] vertBlock = ReadBlock(fs, vertexPointer, vertexCount * elemSize);
+            for (int i = 0; i < vertexCount; i++)
+            {
+                vertexBuffer[(i * 8) + 0] = (ReadFloat(vertBlock, (i * elemSize) + 0x00));    //VertexX
+                vertexBuffer[(i * 8) + 1] = (ReadFloat(vertBlock, (i * elemSize) + 0x04));    //VertexY
+                vertexBuffer[(i * 8) + 2] = (ReadFloat(vertBlock, (i * elemSize) + 0x08));    //VertexZ
+                vertexBuffer[(i * 8) + 3] = (ReadFloat(vertBlock, (i * elemSize) + 0x0C));    //NormX
+                vertexBuffer[(i * 8) + 4] = (ReadFloat(vertBlock, (i * elemSize) + 0x10));    //NormY
+                vertexBuffer[(i * 8) + 5] = (ReadFloat(vertBlock, (i * elemSize) + 0x14));    //NormZ
+                if (elemSize == 0x28)
+                {
+                    weights[i] = (ReadUint(vertBlock, (i * elemSize) + 0x18));
+                    ids[i] = (ReadUint(vertBlock, (i * elemSize) + 0x1C));
+                }
+
+
+            }
+            return vertexBuffer;
+        }
+
         public byte[] SerializeVertices()
         {
             int elemSize = 0x28;
@@ -180,8 +208,6 @@ namespace LibReplanetizer.Models
 
             return outBytes;
         }
-
-
 
         public byte[] SerializeTieVertices()
         {

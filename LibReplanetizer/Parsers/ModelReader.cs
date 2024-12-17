@@ -28,7 +28,7 @@ namespace LibReplanetizer
             using (StreamReader file = new StreamReader(fileName))
             {
                 ushort indCnt = 0, prevCnt = 0;
-                int mod = model.textureConfig[0].mode;
+                int mod = model.mappedTextureConfigs[0].mode;
 
                 while ((line = file.ReadLine()) != null)
                 {
@@ -137,7 +137,7 @@ namespace LibReplanetizer
                 model.vertexBuffer = vertexBufferList.ToArray();
                 model.indexBuffer = indBuff.ToArray();
 
-                model.textureConfig = conf;
+                model.mappedTextureConfigs = conf;
             }
         }
     }

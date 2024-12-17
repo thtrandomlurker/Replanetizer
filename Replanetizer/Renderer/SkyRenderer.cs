@@ -67,9 +67,9 @@ namespace Replanetizer.Renderer
             shaderTable.skyShader.SetUniformMatrix4(UniformName.worldToView, ref mvp);
 
             container.Bind();
-            for (int i = 0; i < sky.textureConfig.Count; i++)
+            for (int i = 0; i < sky.mappedTextureConfigs.Count; i++)
             {
-                TextureConfig conf = sky.textureConfig[i];
+                TextureConfig conf = sky.mappedTextureConfigs[i];
                 shaderTable.skyShader.SetUniform1(UniformName.texAvailable, (conf.id > 0) ? 1.0f : 0.0f);
                 if (conf.id > 0)
                 {
